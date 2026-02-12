@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚔ Quản trị - Lịch Sử Phong Kiến Việt Nam</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="bg-pattern"></div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <h1>🏯 QUẢN TRỊ VIÊN</h1>
+    <div class="subtitle">Hệ thống câu hỏi Lịch sử Phong kiến Việt Nam</div>
+  </header>
+
+  <div class="dragon-divider">❖ ◈ ❖</div>
+
+  <div class="container">
+    <!-- TABS -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('tab-qr')">📱 Tạo mã QR</button>
+      <button class="admin-tab" onclick="switchTab('tab-questions')">📋 Danh sách câu hỏi</button>
+      <button class="admin-tab" onclick="switchTab('tab-add')">➕ Thêm câu hỏi</button>
+    </div>
+
+    <!-- ==================== TAB: TẠO MÃ QR ==================== -->
+    <div id="tab-qr" class="tab-content active">
+      <div class="card">
+        <h2>📱 Tạo mã QR cho Boardgame</h2>
+        <p style="color: var(--gold-light); margin-bottom: 15px;">
+          Mã QR này sẽ dẫn người chơi đến trang trả lời câu hỏi trắc nghiệm. 
+          Khi quét, hệ thống sẽ chọn ngẫu nhiên 1 câu hỏi cho người chơi.
+        </p>
+
+        <div style="margin-bottom: 15px;">
+          <label style="color: var(--gold-light); font-size: 0.9rem;">URL trang quiz (tự động):</label>
+          <input type="text" id="quizUrl" placeholder="Nhập URL hoặc để mặc định..." />
+          <p style="font-size: 0.8rem; color: var(--gold-dark);">
+            💡 Nếu deploy lên hosting, hãy nhập URL đầy đủ. Ví dụ: https://yourdomain.com/play.html
+          </p>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="generateQR()">🔲 Tạo mã QR</button>
+          <button class="btn btn-secondary" onclick="downloadQR()">📥 Tải QR về</button>
+          <button class="btn btn-secondary" onclick="generateMultipleQR()">🔲×6 Tạo nhiều QR (in bàn cờ)</button>
+        </div>
+      </div>
+
+      <div class="card qr-container" id="qrResult" style="display:none;">
+        <h3>✨ Mã QR của bạn</h3>
+        <div class="qr-box" id="qrCode"></div>
+        <div class="qr-label">Quét mã này để bắt đầu trả lời câu hỏi lịch sử</div>
+      </div>
+
+      <!-- Multiple QR for printing -->
+      <div class="card" id="multiQrResult" style="display:none;">
+        <h3>🎲 Bộ mã QR cho bàn cờ (In ra và cắt dán)</h3>
+        <p style="color: var(--gold-light); font-size: 0.85rem; margin-bottom: 15px;">
+          Tất cả các mã QR đều trỏ đến cùng 1 trang quiz, mỗi lần quét sẽ ra câu hỏi ngẫu nhiên khác nhau.
+        </p>
+        <div id="multiQrGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;"></div>
+        <div class="btn-group" style="justify-content: center; margin-top: 20px;">
+          <button class="btn btn-primary" onclick="printQRs()">🖨️ In trang QR</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: DANH SÁCH CÂU HỎI ==================== -->
+    <div id="tab-questions" class="tab-content">
+      <!-- Stats -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-number" id="totalQuestions">0</div>
+          <div class="stat-label">Tổng câu hỏi</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="totalCategories">0</div>
+          <div class="stat-label">Chủ đề</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="customQuestions">0</div>
+          <div class="stat-label">Câu tự thêm</div>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="card">
+        <div class="filter-bar">
+          <select id="filterCategory" onchange="filterQuestions()">
+            <option value="all">📚 Tất cả chủ đề</option>
+          </select>
+          <input type="text" id="filterSearch" placeholder="🔍 Tìm kiếm câu hỏi..." oninput="filterQuestions()" style="flex: 1;" />
+        </div>
+
+        <div class="scroll-hint">⬇ Cuộn để xem thêm</div>
+        <div class="question-list" id="questionList">
+          <!-- Dynamic content -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: THÊM CÂU HỎI ==================== -->
+    <div id="tab-add" class="tab-content">
+      <div class="card">
+        <h2>➕ Thêm câu hỏi mới</h2>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="color: var(--gold-light); font-size: 0.9rem;">Câu hỏi:</label>
+          <textarea id="newQuestion" placeholder="Nhập câu hỏi trắc nghiệm..."></textarea>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="color: var(--gold-light); font-size: 0.9rem;">Chủ đề:</label>
+          <input type="text" id="newCategory" placeholder="Ví dụ: Nhà Trần, Nhà Lý..." />
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="color: var(--gold-light); font-size: 0.9rem;">Đáp án A:</label>
+          <input type="text" id="optionA" placeholder="Đáp án A (đáp án đúng)" />
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="color: var(--gold-light); font-size: 0.9rem;">Đáp án B:</label>
+          <input type="text" id="optionB" placeholder="Đáp án B" />
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="color: var(--gold-light); font-size: 0.9rem;">Đáp án C:</label>
+          <input type="text" id="optionC" placeholder="Đáp án C" />
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="color: var(--gold-light); font-size: 0.9rem;">Đáp án D:</label>
+          <input type="text" id="optionD" placeholder="Đáp án D" />
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="color: var(--gold-light); font-size: 0.9rem;">Đáp án đúng:</label>
+          <select id="correctAnswer">
+            <option value="0">A</option>
+            <option value="1">B</option>
+            <option value="2">C</option>
+            <option value="3">D</option>
+          </select>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-success" onclick="addQuestion()">✅ Thêm câu hỏi</button>
+          <button class="btn btn-secondary" onclick="clearForm()">🗑️ Xoá form</button>
+        </div>
+      </div>
+
+      <!-- Bulk import -->
+      <div class="card">
+        <h2>📦 Nhập hàng loạt (JSON)</h2>
+        <p style="color: var(--gold-light); font-size: 0.85rem; margin-bottom: 10px;">
+          Dán danh sách câu hỏi theo định dạng JSON để thêm nhiều câu cùng lúc.
+        </p>
+        <textarea id="bulkJson" placeholder='[{"question":"...","options":["A","B","C","D"],"correct":0,"category":"Nhà Trần"}]' style="min-height: 150px; font-family: monospace; font-size: 0.85rem;"></textarea>
+        <div class="btn-group">
+          <button class="btn btn-success" onclick="bulkImport()">📥 Nhập hàng loạt</button>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="card">
+        <h2>📤 Xuất dữ liệu</h2>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="exportQuestions()">📤 Xuất JSON</button>
+          <button class="btn btn-danger" onclick="resetToDefault()">🔄 Khôi phục mặc định (100 câu)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/questions.js"></script>
+  <script>
+    // ==================== DATA MANAGEMENT ====================
+    function getAllQuestions() {
+      const custom = JSON.parse(localStorage.getItem('customQuestions') || '[]');
+      return [...QUESTIONS_DB, ...custom];
+    }
+
+    function getCustomQuestions() {
+      return JSON.parse(localStorage.getItem('customQuestions') || '[]');
+    }
+
+    function saveCustomQuestions(questions) {
+      localStorage.setItem('customQuestions', JSON.stringify(questions));
+    }
+
+    // ==================== TABS ====================
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+      
+      if (tabId === 'tab-questions') {
+        renderQuestionList();
+        updateStats();
+      }
+    }
+
+    // ==================== QR CODE ====================
+    let qrInstance = null;
+
+    function getQuizURL() {
+      const customUrl = document.getElementById('quizUrl').value.trim();
+      if (customUrl) return customUrl;
+      
+      // Auto-detect URL
+      const currentUrl = window.location.href;
+      const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+      return baseUrl + 'play.html';
+    }
+
+    function generateQR() {
+      const url = getQuizURL();
+      const container = document.getElementById('qrCode');
+      const result = document.getElementById('qrResult');
+      
+      container.innerHTML = '';
+      result.style.display = 'block';
+
+      qrInstance = new QRCode(container, {
+        text: url,
+        width: 250,
+        height: 250,
+        colorDark: '#1a0f0a',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      showToast('✅ Đã tạo mã QR thành công!');
+    }
+
+    function downloadQR() {
+      const canvas = document.querySelector('#qrCode canvas');
+      if (!canvas) {
+        showToast('⚠️ Hãy tạo mã QR trước!');
+        return;
+      }
+      const link = document.createElement('a');
+      link.download = 'boardgame-lichsu-qr.png';
+      link.href = canvas.toDataURL();
+      link.click();
+      showToast('📥 Đã tải QR về!');
+    }
+
+    function generateMultipleQR() {
+      const url = getQuizURL();
+      const grid = document.getElementById('multiQrGrid');
+      const result = document.getElementById('multiQrResult');
+      
+      grid.innerHTML = '';
+      result.style.display = 'block';
+
+      for (let i = 0; i < 6; i++) {
+        const cell = document.createElement('div');
+        cell.style.cssText = 'text-align:center; background: white; padding: 15px; border-radius: 8px;';
+        
+        const qrDiv = document.createElement('div');
+        qrDiv.id = 'multiQr' + i;
+        cell.appendChild(qrDiv);
+        
+        const label = document.createElement('p');
+        label.style.cssText = 'margin-top:8px; font-size:0.75rem; color:#333; font-weight:600;';
+        label.textContent = `Ô QR #${i + 1}`;
+        cell.appendChild(label);
+        
+        grid.appendChild(cell);
+
+        new QRCode(qrDiv, {
+          text: url,
+          width: 150,
+          height: 150,
+          colorDark: '#1a0f0a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+
+      showToast('✅ Đã tạo 6 mã QR để in!');
+    }
+
+    function printQRs() {
+      window.print();
+    }
+
+    // ==================== QUESTION LIST ====================
+    function renderQuestionList() {
+      const list = document.getElementById('questionList');
+      const allQ = getAllQuestions();
+      const filter = document.getElementById('filterCategory').value;
+      const search = document.getElementById('filterSearch').value.toLowerCase();
+
+      let filtered = allQ;
+      if (filter !== 'all') {
+        filtered = filtered.filter(q => q.category === filter);
+      }
+      if (search) {
+        filtered = filtered.filter(q => 
+          q.question.toLowerCase().includes(search) || 
+          q.category.toLowerCase().includes(search)
+        );
+      }
+
+      const letters = ['A', 'B', 'C', 'D'];
+      list.innerHTML = filtered.map((q, idx) => `
+        <div class="question-item">
+          <span class="q-number">${q.id || idx + 1}</span>
+          <span class="q-category">${q.category}</span>
+          <div class="q-text">${q.question}</div>
+          <ul class="q-options">
+            ${q.options.map((opt, oi) => `
+              <li class="${oi === q.correct ? 'correct' : ''}">${letters[oi]}. ${opt}</li>
+            `).join('')}
+          </ul>
+        </div>
+      `).join('');
+
+      // Update category filter
+      const categories = [...new Set(allQ.map(q => q.category))];
+      const catSelect = document.getElementById('filterCategory');
+      const currentVal = catSelect.value;
+      catSelect.innerHTML = '<option value="all">📚 Tất cả chủ đề</option>';
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        if (cat === currentVal) opt.selected = true;
+        catSelect.appendChild(opt);
+      });
+    }
+
+    function filterQuestions() {
+      renderQuestionList();
+    }
+
+    function updateStats() {
+      const allQ = getAllQuestions();
+      const custom = getCustomQuestions();
+      const categories = [...new Set(allQ.map(q => q.category))];
+      
+      document.getElementById('totalQuestions').textContent = allQ.length;
+      document.getElementById('totalCategories').textContent = categories.length;
+      document.getElementById('customQuestions').textContent = custom.length;
+    }
+
+    // ==================== ADD QUESTION ====================
+    function addQuestion() {
+      const question = document.getElementById('newQuestion').value.trim();
+      const category = document.getElementById('newCategory').value.trim();
+      const optA = document.getElementById('optionA').value.trim();
+      const optB = document.getElementById('optionB').value.trim();
+      const optC = document.getElementById('optionC').value.trim();
+      const optD = document.getElementById('optionD').value.trim();
+      const correct = parseInt(document.getElementById('correctAnswer').value);
+
+      if (!question || !category || !optA || !optB || !optC || !optD) {
+        showToast('⚠️ Vui lòng điền đầy đủ thông tin!');
+        return;
+      }
+
+      const custom = getCustomQuestions();
+      const allQ = getAllQuestions();
+      const newId = allQ.length + 1;
+
+      custom.push({
+        id: newId,
+        question,
+        options: [optA, optB, optC, optD],
+        correct,
+        category,
+        custom: true
+      });
+
+      saveCustomQuestions(custom);
+      clearForm();
+      showToast('✅ Đã thêm câu hỏi thành công!');
+    }
+
+    function clearForm() {
+      document.getElementById('newQuestion').value = '';
+      document.getElementById('newCategory').value = '';
+      document.getElementById('optionA').value = '';
+      document.getElementById('optionB').value = '';
+      document.getElementById('optionC').value = '';
+      document.getElementById('optionD').value = '';
+      document.getElementById('correctAnswer').value = '0';
+    }
+
+    // ==================== BULK IMPORT ====================
+    function bulkImport() {
+      const json = document.getElementById('bulkJson').value.trim();
+      if (!json) {
+        showToast('⚠️ Vui lòng dán dữ liệu JSON!');
+        return;
+      }
+
+      try {
+        const data = JSON.parse(json);
+        if (!Array.isArray(data)) throw new Error('Phải là mảng');
+
+        const custom = getCustomQuestions();
+        let count = 0;
+        const allQ = getAllQuestions();
+
+        data.forEach((item, idx) => {
+          if (item.question && item.options && item.options.length === 4 && typeof item.correct === 'number') {
+            custom.push({
+              id: allQ.length + count + 1,
+              question: item.question,
+              options: item.options,
+              correct: item.correct,
+              category: item.category || 'Chưa phân loại',
+              custom: true
+            });
+            count++;
+          }
+        });
+
+        saveCustomQuestions(custom);
+        document.getElementById('bulkJson').value = '';
+        showToast(`✅ Đã nhập ${count} câu hỏi thành công!`);
+      } catch (e) {
+        showToast('❌ Lỗi JSON: ' + e.message);
+      }
+    }
+
+    // ==================== EXPORT ====================
+    function exportQuestions() {
+      const allQ = getAllQuestions();
+      const json = JSON.stringify(allQ, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.download = 'questions-lichsu-phongkien.json';
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      showToast('📤 Đã xuất dữ liệu!');
+    }
+
+    function resetToDefault() {
+      if (confirm('⚠️ Bạn có chắc muốn xoá tất cả câu hỏi tự thêm và khôi phục về 100 câu mặc định?')) {
+        localStorage.removeItem('customQuestions');
+        showToast('🔄 Đã khôi phục về mặc định!');
+        renderQuestionList();
+        updateStats();
+      }
+    }
+
+    // ==================== TOAST ====================
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ==================== INIT ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set default URL
+      const currentUrl = window.location.href;
+      const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+      document.getElementById('quizUrl').placeholder = baseUrl + 'play.html';
+      
+      updateStats();
+    });
+  </script>
+
+  <!-- Print styles -->
+  <style>
+    @media print {
+      body { background: white !important; }
+      .bg-pattern, .header, .admin-tabs, #tab-qr > .card:first-child, 
+      #tab-questions, #tab-add, .toast, .dragon-divider,
+      #qrResult, .btn-group { display: none !important; }
+      #multiQrResult { 
+        display: block !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: white !important;
+      }
+      #multiQrGrid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 15px !important;
+      }
+      #multiQrGrid > div {
+        border: 2px dashed #ccc !important;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</body>
+</html>
