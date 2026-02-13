@@ -6,9 +6,115 @@
   <title>⚔ Quản trị - Lịch Sử Phong Kiến Việt Nam</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* Admin Login Overlay */
+    .admin-login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #2C1810 0%, #1a0f0a 50%, #0d0705 100%);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .admin-login-overlay.hidden {
+      display: none;
+    }
+
+    .login-box {
+      background: rgba(0,0,0,0.4);
+      border: 2px solid var(--gold);
+      border-radius: 16px;
+      padding: 40px 30px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 0 40px rgba(212,168,67,0.15);
+    }
+
+    .login-box .login-icon {
+      font-size: 4rem;
+      margin-bottom: 15px;
+    }
+
+    .login-box h2 {
+      font-family: 'Playfair Display', serif;
+      color: var(--gold);
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .login-box p {
+      color: var(--gold-light);
+      font-size: 0.9rem;
+      margin-bottom: 25px;
+      opacity: 0.8;
+    }
+
+    .login-box input[type="password"] {
+      width: 100%;
+      padding: 14px 18px;
+      font-size: 1rem;
+      border: 2px solid rgba(212,168,67,0.4);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.3);
+      color: var(--cream);
+      text-align: center;
+      letter-spacing: 4px;
+      margin-bottom: 15px;
+      font-family: 'Be Vietnam Pro', sans-serif;
+    }
+
+    .login-box input[type="password"]:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 15px rgba(212,168,67,0.3);
+    }
+
+    .login-error {
+      color: #ff6b6b;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .login-error.show {
+      display: block;
+    }
+
+    .admin-content-wrapper {
+      display: none;
+    }
+
+    .admin-content-wrapper.visible {
+      display: block;
+    }
+  </style>
 </head>
 <body>
   <div class="bg-pattern"></div>
+
+  <!-- ADMIN LOGIN OVERLAY -->
+  <div class="admin-login-overlay" id="adminLoginOverlay">
+    <div class="login-box">
+      <div class="login-icon">🔐</div>
+      <h2>Xác nhận Quản trị viên</h2>
+      <p>Nhập mật khẩu để truy cập trang quản trị</p>
+      <input type="password" id="adminPassword" placeholder="••••••" onkeydown="if(event.key==='Enter')verifyAdmin()" autofocus />
+      <div class="login-error" id="loginError">❌ Sai mật khẩu! Vui lòng thử lại.</div>
+      <button class="btn btn-primary" onclick="verifyAdmin()" style="width: 100%; padding: 14px; font-size: 1rem;">
+        🔓 Đăng nhập
+      </button>
+    </div>
+  </div>
+
+  <!-- ADMIN CONTENT (hidden until login) -->
+  <div class="admin-content-wrapper" id="adminContent">
 
   <!-- HEADER -->
   <header class="header">
@@ -176,6 +282,8 @@
       </div>
     </div>
   </div>
+
+  </div> <!-- END admin-content-wrapper -->
 
   <!-- Toast notification -->
   <div class="toast" id="toast"></div>
@@ -497,7 +605,40 @@
         border: 2px dashed #ccc !important;
         break-inside: avoid;
       }
+      .admin-login-overlay { display: none !important; }
+      .admin-content-wrapper { display: block !important; }
     }
   </style>
+
+  <script>
+    // ==================== ADMIN LOGIN ====================
+    // Mật khẩu admin mặc định - thay đổi tại đây
+    const ADMIN_PASSWORD = 'admin2026';
+
+    function verifyAdmin() {
+      const input = document.getElementById('adminPassword').value;
+      const errorEl = document.getElementById('loginError');
+      
+      if (input === ADMIN_PASSWORD) {
+        document.getElementById('adminLoginOverlay').classList.add('hidden');
+        document.getElementById('adminContent').classList.add('visible');
+        // Save session
+        sessionStorage.setItem('adminAuth', 'true');
+      } else {
+        errorEl.classList.add('show');
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('adminPassword').focus();
+        setTimeout(() => errorEl.classList.remove('show'), 3000);
+      }
+    }
+
+    // Check if already authenticated in this session
+    document.addEventListener('DOMContentLoaded', () => {
+      if (sessionStorage.getItem('adminAuth') === 'true') {
+        document.getElementById('adminLoginOverlay').classList.add('hidden');
+        document.getElementById('adminContent').classList.add('visible');
+      }
+    });
+  </script>
 </body>
 </html>
