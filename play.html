@@ -31,10 +31,16 @@
     }
 
     .loading-logo {
-      font-size: 6rem;
       margin-bottom: 20px;
       filter: drop-shadow(0 4px 15px rgba(212,168,67,0.5));
       animation: floatLantern 3s ease-in-out infinite;
+    }
+
+    .loading-logo img {
+      width: 120px;
+      height: auto;
+      display: block;
+      margin: 0 auto;
     }
 
     .loading-title {
@@ -110,9 +116,15 @@
     }
 
     .welcome-logo {
-      font-size: 5rem;
       margin-bottom: 15px;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+    }
+
+    .welcome-logo img {
+      width: 100px;
+      height: auto;
+      display: block;
+      margin: 0 auto;
     }
 
     .welcome-title {
@@ -336,7 +348,7 @@
     <!-- ==================== PHASE 0: LOADING ==================== -->
     <div id="phase-loading" class="phase active">
       <div class="loading-screen">
-        <div class="loading-logo">🏯</div>
+        <div class="loading-logo"><img src="img/logo.png" alt="Logo Nhất Thống Đại Việt" /></div>
         <div class="loading-title">Nhất Thống Đại Việt</div>
         <div class="loading-subtitle">Boardgame Lịch Sử Phong Kiến Việt Nam</div>
         <div class="loading-bar-container">
@@ -352,7 +364,7 @@
     <!-- ==================== PHASE 1: WELCOME ==================== -->
     <div id="phase-welcome" class="phase">
       <div class="welcome-screen">
-        <div class="welcome-logo">🏯</div>
+        <div class="welcome-logo"><img src="img/logo.png" alt="Logo" /></div>
         <div class="welcome-title">Thử Thách<br/>Lịch Sử Phong Kiến</div>
         <div class="welcome-subtitle">Việt Nam qua các Triều đại</div>
         
